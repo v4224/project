@@ -1,0 +1,306 @@
+version: "3.7"
+
+services:
+  mysql:
+    image: hoangvu42/mysql
+    networks:
+      - todo
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password_secret_tcp
+      - MYSQL_DATABASE=todo-list      
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure       
+    volumes:
+      - mysql:/var/lib/mysql
+      - ./data.sql:/docker-entrypoint-initdb.d/data.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    image: hoangvu42/redis
+    networks:
+      - todo
+    ports:
+      - 6379:6379
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        window: 120s
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    image: hoangvu42/todo-auth-service
+    networks:
+      - todo
+    environment:
+      - DB_DSN=root:root_password_secret_tcp@tcp(mysql:3306)/todo-auth?charset=utf8mb4&parseTime=True&loc=Local
+      - GIN_PORT=3100
+      - GRPC_PORT=3101
+      - GRPC_USER_ADDRESS=user-service:3201
+      - JWT_SECRET=very-important-please-change-it!      
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure    
+    depends_on:
+      - mysql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  user-service:
+    image: hoangvu42/todo-user-service
+    networks:
+      - todo
+    environment:
+      - DB_DSN=root:root_password_secret_tcp@tcp(mysql:3306)/todo-user?charset=utf8mb4&parseTime=True&loc=Local
+      - GIN_PORT=3200
+      - GRPC_PORT=3201
+      - GRPC_AUTH_ADDRESS=auth-service:3101      
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure   
+    depends_on:
+      - mysql
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  task-service:
+    image: hoangvu42/todo-task-service
+    networks:
+      - todo
+    environment:
+      - DB_DSN=root:root_password_secret_tcp@tcp(mysql:3306)/todo-task?charset=utf8mb4&parseTime=True&loc=Local
+      - GIN_PORT=3300
+      - GRPC_AUTH_ADDRESS=auth-service:3101      
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure     
+    depends_on:
+      - mysql  
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  todo-fe:
+    image: hoangvu42/todo-todo-fe
+    networks:
+      - todo    
+    ports:
+      - 80:80
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        window: 120s
+    depends_on:
+      - gateway    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  gateway:
+    image: hoangvu42/gateway
+    networks:
+      - todo    
+    ports:
+      - 8080:8080
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        window: 120s       
+    volumes:
+      - ./gateway/tyk.standalone.conf:/opt/tyk-gateway/tyk.conf
+      - ./gateway/apps:/opt/tyk-gateway/apps
+    depends_on:
+      - redis   
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  grafana:
+    image: hoangvu42/grafana
+    networks:
+      - todo    
+    ports:
+      - 3000:3000
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        window: 120s
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./grafana.ini:/etc/grafana/grafana.ini    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  prometheus:
+    image: hoangvu42/prometheus
+    networks:
+      - todo    
+    ports:
+      - 9090:9090
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        window: 120s
+    volumes:
+      - prometheus:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml       
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  exporter:
+    image: hoangvu42/node-exporter
+    networks:
+      - todo
+    ports:
+      - 9100:9100
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 200MB
+        reservations:
+          cpus: '0.25'
+          memory: 50MB
+      restart_policy:
+        condition: on-failure
+        max_attempts: 5
+        window: 120s
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"  
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  todo:
+    driver: overlay
+
+volumes:
+  mysql:
+  redis:
+  grafana:
+  prometheus:                    
