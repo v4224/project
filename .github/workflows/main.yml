@@ -31,6 +31,7 @@ jobs:
         run: docker stack rm my_todo_app
       - name: Image scan
         run: |
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}        
           chmod +x script/pull_and_scan_images.sh
           ./script/pull_and_scan_images.sh
       - name: Deploy with Docker Swarm

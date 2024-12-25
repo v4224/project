@@ -1,11 +1,12 @@
 #!/bin/bash
 
+DOCKER_USERNAME="hoangvu42"
 IMAGES="images.txt"
 
 REPORT_FILE="trivy_scan_images_report.txt"
 
 pull_image() {
-  local image_name="${{ secrets.DOCKER_USERNAME }}/${1}:latest"
+  local image_name="${DOCKER_USERNAME}/${1}:latest"
 
   echo "-----------------------------"
   echo "Pulling image: ${image_name}..."
@@ -23,7 +24,7 @@ pull_image() {
 }
 
 scan_image() {
-  local image_name="${{ secrets.DOCKER_USERNAME }}/${1}:latest"
+  local image_name="${DOCKER_USERNAME}/${1}:latest"
 
   echo "-----------------------------"
   echo "Scanning image: ${image_name}..."

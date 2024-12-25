@@ -3,15 +3,16 @@
 declare -A SERVICES
 SERVICES=(
   ["auth-service"]="./auth-service"
-  ["user-service"]="./profile-service"
+  ["user-service"]="./user-service"
   ["task-service"]="./task-service"
   ["todo-frontend"]="./todo-fe"
 )
+DOCKER_USERNAME="hoangvu42"
 
 build_and_push() {
   local service_name=$1
   local service_path=$2
-  local image_name="${{ secrets.DOCKER_USERNAME }}/${service_name}:latest"
+  local image_name="${DOCKER_USERNAME}/todo-${service_name}:latest"
 
   echo "-----------------------------"
   echo "Building image for ${service_name}..."
@@ -34,13 +35,6 @@ build_and_push() {
 
   echo "Successfully pushed ${image_name} to DockerHub"
 }
-
-echo "Login DockerHub..."
-docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
-if [ $? -ne 0 ]; then
-  echo "DockerHub login failed. Please check your credentials."
-  exit 1
-fi
 
 for service in "${!SERVICES[@]}"; do
   build_and_push "$service" "${SERVICES[$service]}"
