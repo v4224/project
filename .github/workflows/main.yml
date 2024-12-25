@@ -34,7 +34,7 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-       - name: Remove Existing Containers
+      - name: Remove Existing Containers
         run: | 
           cd /project/todo
           docker stack rm my_todo_app
