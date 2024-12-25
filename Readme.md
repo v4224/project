@@ -9,5 +9,3 @@
 
 3. Truy cập vào `http://localhost` để sử dụng và `http://localhost:8080` sử dụng API Gateway
 4. Đăng ký tài khoản và sử dụng
-5. Chúc bạn một ngày tốt lành!
-
