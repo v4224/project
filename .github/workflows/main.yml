@@ -20,7 +20,7 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: Build and Push Image
         run: |
-          chmod +x build_and_push.sh
+          chmod +x script/build_and_push.sh
           ./script/build_and_push.sh
 
   deploy:
@@ -31,7 +31,7 @@ jobs:
         run: docker stack rm my_todo_app
       - name: Image scan
         run: |
-          chmod +x pull_and_scan_images.sh
+          chmod +x script/pull_and_scan_images.sh
           ./script/pull_and_scan_images.sh
       - name: Deploy with Docker Swarm
         run: docker stack deploy -c swarm.yml my_todo_app
