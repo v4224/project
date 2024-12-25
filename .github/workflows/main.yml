@@ -1,0 +1,39 @@
+name: CI/CD pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      - name: Build and Push Image
+        run: |
+          docker build -t web .
+          docker tag web hoangvu42/web:latest
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
+          docker push hoangvu42/web:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Remove Existing Containers
+        run: docker-compose down
+      - name: Pull Docker Images
+        run: docker pull hoangvu42/web:latest
+      - name: Image scan
+        run: trivy image hoangvu42/web:latest > trivy_scan_image_report.txt
+      - name: Deploy with Docker Compose
+        run: docker-compose up -d
