@@ -20,6 +20,11 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: Build and Push Image
         run: |
+          # docker build -t hoangvu42/todo-auth-service ./auth-service
+          # docker build -t hoangvu42/todo-user-service ./profile-service
+          # docker build -t hoangvu42/todo-task-service ./task-service
+          # docker build -t hoangvu42/todo-todo-fe ./todo-fe
+          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}           
           chmod +x script/build_and_push.sh
           ./script/build_and_push.sh
 
@@ -30,8 +35,7 @@ jobs:
       - name: Remove Existing Containers
         run: docker stack rm my_todo_app
       - name: Image scan
-        run: |
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}        
+        run: |       
           chmod +x script/pull_and_scan_images.sh
           ./script/pull_and_scan_images.sh
       - name: Deploy with Docker Swarm
