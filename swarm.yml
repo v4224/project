@@ -23,7 +23,7 @@ services:
         condition: on-failure       
     volumes:
       - mysql:/var/lib/mysql
-      - ./data.sql:/docker-entrypoint-initdb.d/data.sql
+      - ./database/data.sql:/docker-entrypoint-initdb.d/data.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s

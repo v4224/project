@@ -20,20 +20,18 @@ jobs:
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       - name: Build and Push Image
         run: |
-          docker build -t web .
-          docker tag web hoangvu42/web:latest
-          docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_TOKEN }}
-          docker push hoangvu42/web:latest
+          chmod +x build_and_push.sh
+          ./script/build_and_push.sh
 
   deploy:
     needs: build
     runs-on: self-hosted
     steps:
       - name: Remove Existing Containers
-        run: docker-compose down
-      - name: Pull Docker Images
-        run: docker pull hoangvu42/web:latest
+        run: docker stack rm my_todo_app
       - name: Image scan
-        run: trivy image hoangvu42/web:latest > trivy_scan_image_report.txt
-      - name: Deploy with Docker Compose
-        run: docker-compose up -d
+        run: |
+          chmod +x pull_and_scan_images.sh
+          ./script/pull_and_scan_images.sh
+      - name: Deploy with Docker Swarm
+        run: docker stack deploy -c swarm.yml my_todo_app
