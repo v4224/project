@@ -227,7 +227,7 @@ services:
         window: 120s
     volumes:
       - grafana:/var/lib/grafana
-      - ./grafana.ini:/etc/grafana/grafana.ini    
+      - ./monitor/grafana.ini:/etc/grafana/grafana.ini    
     logging:
       driver: "json-file"
       options:
@@ -255,7 +255,7 @@ services:
         window: 120s
     volumes:
       - prometheus:/prometheus
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml       
+      - ./monitor/prometheus.yml:/etc/prometheus/prometheus.yml       
     logging:
       driver: "json-file"
       options:

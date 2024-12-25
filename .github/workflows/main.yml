@@ -34,11 +34,15 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-      - name: Remove Existing Containers
-        run: docker stack rm my_todo_app
+       - name: Remove Existing Containers
+        run: | 
+          cd /project/todo
+          docker stack rm my_todo_app
       - name: Image scan
         run: |       
           chmod +x script/pull_and_scan_images.sh
           ./script/pull_and_scan_images.sh
       - name: Deploy with Docker Swarm
-        run: docker stack deploy -c swarm.yml my_todo_app
+        run: | 
+          cd /project/todo
+          docker stack deploy -c swarm.yml my_todo_app
